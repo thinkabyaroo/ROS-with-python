@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Command Executor</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 30px; }
+        .container { width: 500px; margin: auto; text-align: center; }
+        button { margin: 10px; padding: 10px 20px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Upload Command File (CSV or Excel)</h2>
+        <form action="/" method="post" enctype="multipart/form-data">
+            <input type="file" name="file" accept=".csv,.xlsx,.xls" required><br><br>
+            <button type="submit" name="action" value="check">Check Commands</button>
+            <button type="submit" name="action" value="execute">Execute Commands</button>
+        </form>
+    </div>
+</body>
+</html>

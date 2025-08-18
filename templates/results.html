@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Command Results</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 30px; }
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background: #f2f2f2; }
+        .error { color: red; }
+        .success { color: green; }
+    </style>
+</head>
+<body>
+    <h2>Command Results</h2>
+    <table>
+        <tr>
+            <th>Description</th>
+            <th>Command</th>
+            <th>Output</th>
+            <th>Error</th>
+        </tr>
+        {% for r in results %}
+        <tr>
+            <td>{{ r.description }}</td>
+            <td><code>{{ r.command }}</code></td>
+            <td class="success">{{ r.output }}</td>
+            <td class="error">{{ r.error }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+    <br>
+    <a href="/">Back to Upload</a>
+</body>
+</html>
