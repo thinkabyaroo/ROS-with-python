@@ -59,16 +59,13 @@ def index():
                         error = test_result.stderr.strip() or test_result.stdout.strip()
             elif action == "execute":
                 try:
-                    command_to_run = command.strip()  # remove extra spaces/newlines
-                    result = subprocess.run(command_to_run, shell=True, capture_output=True, text=True)
+                    result = subprocess.run(command, shell=True, capture_output=True, text=True)
                     if result.returncode == 0:
                         output = result.stdout.strip()
                     else:
                         error = result.stderr.strip() or result.stdout.strip()
                 except Exception as e:
                     error = str(e)
-                    print("ERROR:", e)  # will show the actual error in terminal
-
 
             results.append({
                 "description": description,
