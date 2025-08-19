@@ -49,20 +49,26 @@ def index():
             if action == "check":
                 cmd_name = command.split(" ")[0]
                 result = subprocess.run(["which", cmd_name], capture_output=True, text=True)
-                if result.returncode == 0:
-                    output = "✓ Command exists"
-                else:
+                if result.returncode != 0:
                     error = f"✗ Command not found: {cmd_name}"
-
+                else:
+                    test_result = subprocess.run(command, shell=True, capture_output=True, text=True)
+                    if test_result.returncode == 0:
+                        output = "✓ Command exists"
+                    else:
+                        error = test_result.stderr.strip() or test_result.stdout.strip()
             elif action == "execute":
                 try:
-                    result = subprocess.run(command, shell=True, capture_output=True, text=True)
+                    command_to_run = command.strip()  # remove extra spaces/newlines
+                    result = subprocess.run(command_to_run, shell=True, capture_output=True, text=True)
                     if result.returncode == 0:
                         output = result.stdout.strip()
                     else:
                         error = result.stderr.strip() or result.stdout.strip()
                 except Exception as e:
                     error = str(e)
+                    print("ERROR:", e)  # will show the actual error in terminal
+
 
             results.append({
                 "description": description,
