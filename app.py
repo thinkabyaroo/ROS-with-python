@@ -41,6 +41,9 @@ def index():
             return "File must have 'Description' and 'Command' columns", 400
 
         results = []
+        all_ok = True
+        only_cmd_not_found = True
+
         for _, row in df.iterrows():
             description = str(row["Description"])
             command = str(row["Command"])
@@ -50,13 +53,16 @@ def index():
                 cmd_name = command.split(" ")[0]
                 result = subprocess.run(["which", cmd_name], capture_output=True, text=True)
                 if result.returncode != 0:
-                    error = f"✗ Command not found: {cmd_name}"
+                    error = f"Command not found"
+                    all_ok = False
                 else:
                     test_result = subprocess.run(command, shell=True, capture_output=True, text=True)
                     if test_result.returncode == 0:
-                        output = "✓ Command exists"
+                        output = f"Command exists"
                     else:
                         error = test_result.stderr.strip() or test_result.stdout.strip()
+                        all_ok = False
+                        only_cmd_not_found = False
             elif action == "execute":
                 try:
                     result = subprocess.run(command, shell=True, capture_output=True, text=True)
@@ -74,7 +80,8 @@ def index():
                 "error": error
             })
 
-        return render_template("results.html", results=results)
+        return render_template("results.html", results=results,
+                               all_ok=all_ok, only_cmd_not_found=only_cmd_not_found)
 
     return render_template("index.html")
 
@@ -114,5 +121,4 @@ if __name__ == "__main__":
         port = find_free_port()
         print(f"Port {old_port} is in use. Using free port {port} instead.")
 
-    print(f"Running Flask app on http://<your-ip>:{port}")
     app.run(host="0.0.0.0", port=port, debug=False)
