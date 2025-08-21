@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, session
 import os
 import pandas as pd
 import subprocess
@@ -6,6 +6,7 @@ import tempfile
 import socket
 
 app = Flask(__name__)
+app.secret_key = 'your-secret-key-change-this'  # Required for sessions
 
 # Temporary folder for uploaded files
 UPLOAD_FOLDER = tempfile.gettempdir()
@@ -15,14 +16,46 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 @app.route("/", methods=["GET", "POST"])
 def index():
     if request.method == "POST":
+        action = request.form.get("action")  # "check" or "execute"
+        
+        # Handle execute action from results page
+        if action == "execute" and 'commands' in session:
+            commands_data = session['commands']
+            results = []
+            
+            for cmd_data in commands_data:
+                description = cmd_data["description"]
+                command = cmd_data["command"]
+                
+                try:
+                    result = subprocess.run(command, shell=True, capture_output=True, text=True)
+                    if result.returncode == 0:
+                        output = result.stdout.strip()
+                        error = ""
+                    else:
+                        error = result.stderr.strip() or result.stdout.strip()
+                        output = ""
+                except Exception as e:
+                    error = str(e)
+                    output = ""
+
+                results.append({
+                    "description": description,
+                    "command": command,
+                    "output": output,
+                    "error": error
+                })
+            
+            return render_template("results.html", results=results, 
+                                   all_ok=False, only_cmd_not_found=False)
+        
+        # Handle file upload for check action
         if 'file' not in request.files:
             return "No file uploaded", 400
 
         file = request.files['file']
         if file.filename == "":
             return "No file selected", 400
-
-        action = request.form.get("action")  # "check" or "execute"
 
         filepath = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
         file.save(filepath)
@@ -43,11 +76,18 @@ def index():
         results = []
         all_ok = True
         only_cmd_not_found = True
+        commands_data = []  # Store for later execution
 
         for _, row in df.iterrows():
             description = str(row["Description"])
             command = str(row["Command"])
             output, error = "", ""
+            
+            # Store command data for later execution
+            commands_data.append({
+                "description": description,
+                "command": command
+            })
 
             if action == "check":
                 cmd_name = command.split(" ")[0]
@@ -63,15 +103,6 @@ def index():
                         error = test_result.stderr.strip() or test_result.stdout.strip()
                         all_ok = False
                         only_cmd_not_found = False
-            elif action == "execute":
-                try:
-                    result = subprocess.run(command, shell=True, capture_output=True, text=True)
-                    if result.returncode == 0:
-                        output = result.stdout.strip()
-                    else:
-                        error = result.stderr.strip() or result.stdout.strip()
-                except Exception as e:
-                    error = str(e)
 
             results.append({
                 "description": description,
@@ -80,6 +111,9 @@ def index():
                 "error": error
             })
 
+        # Store commands in session for later execution
+        session['commands'] = commands_data
+        
         return render_template("results.html", results=results,
                                all_ok=all_ok, only_cmd_not_found=only_cmd_not_found)
 
